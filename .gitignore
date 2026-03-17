@@ -3,5 +3,6 @@ badminton_analysis_videos
 dataset
 env
 frames
-label_frames
+labels
 .env
+dataset.yaml
