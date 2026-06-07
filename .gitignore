@@ -7,3 +7,4 @@ labels
 .env
 dataset.yaml
 old_raw_frames
+local
