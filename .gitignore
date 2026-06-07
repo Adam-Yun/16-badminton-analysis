@@ -8,3 +8,4 @@ labels
 dataset.yaml
 old_raw_frames
 local
+.DS_Store
