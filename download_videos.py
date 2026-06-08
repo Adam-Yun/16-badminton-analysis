@@ -2,12 +2,13 @@ import argparse
 import os
 import sys
 from typing import Optional
-
+from dotenv import load_dotenv
 import yt_dlp
 
+load_dotenv()
 
 OUTPUT_DIR = "badminton_analysis_videos"
-URLS_FILE = "urls.txt"
+URLS_FILE = os.getenv("DOWNLOAD_VIDEO_URLS")
 
 DOWNLOAD_STRATEGIES = [
     {"name": "ios",     "player_client": ["ios"]},
