@@ -3,6 +3,7 @@
 # to TRAIN_MODEL_PATH, and exports an ONNX copy to TRAIN_ONNX_PATH.
 
 import os
+import torch
 from dotenv import load_dotenv
 from classify import train_classifier, export_to_onnx
 
@@ -19,6 +20,10 @@ if __name__ == "__main__":
     if not os.path.exists(DATASET_PATH):
         print(f"Error: Folder '{DATASET_PATH}' not found. Please make sure your images are in '{DATASET_PATH}/train' and '{DATASET_PATH}/val'.")
     else:
+        if torch.cuda.is_available():
+            print(f"CUDA available — using GPU: {torch.cuda.get_device_name(0)}")
+        else:
+            print("CUDA not available — training on CPU (this will be slow)")
         print("--- Starting Classifier Training ---")
         try:
             model = train_classifier(DATASET_PATH, num_epochs=NUM_EPOCHS)
