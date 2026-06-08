@@ -31,10 +31,13 @@ from pathlib import Path
 
 import torch
 from PIL import Image
-from torchvision import transforms
+from torchvision import transforms, models
 
-# Import the model architecture from the local gatekeeper module
-from gatekeeper import get_model
+
+def get_model(num_classes=2, pretrained=False):
+    model = models.resnet18(weights=None if not pretrained else "IMAGENET1K_V1")
+    model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
+    return model
 
 # Supported image formats
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
@@ -69,7 +72,7 @@ def iter_images(folder):
 def main():
     # --- Argument Parsing ---
     parser = argparse.ArgumentParser(description="Sort frames into rally / non_rally folders using the gatekeeper model.")
-    parser.add_argument("input", help="Folder containing frames to classify.")
+    parser.add_argument("input", nargs="?", default="frames", help="Folder containing frames to classify (default: frames).")
     parser.add_argument("-o", "--output", default="sorted_frames", help="Output folder (default: sorted_frames).")
     parser.add_argument("-m", "--model", default="gatekeeper_best.pth", help="Path to model weights.")
     parser.add_argument("-b", "--batch-size", type=int, default=32, help="Batch size for inference.")
