@@ -1,21 +1,24 @@
-# Evaluates the trained Gatekeeper model on a folder of test images, printing
+# Evaluates the trained rally classifier on a folder of test images, printing
 # the per-image RALLY / NON-RALLY prediction and confidence, plus totals at the
 # end. Uses buffer_size=1 so each image is judged independently.
 
 import cv2
 import os
 import torch
-from gatekeeper import GatekeeperInference
+from dotenv import load_dotenv
+from classify import RallyClassifier
 
-# 1. Setup - Point to your best model
-MODEL_PATH = "gatekeeper_best.pth"
+load_dotenv()
+
+# 1. Setup - Point to your best model (from .env)
+MODEL_PATH = os.getenv("CLASSIFY_RALLY")
 # Point to a folder of images you want to test
-TEST_FOLDER = "test_rally_scene" 
+TEST_FOLDER = "test_rally_scene"
 
 def test_on_images(folder_path):
-    # Initialize our Gatekeeper
+    # Initialize the classifier
     # We set buffer_size=1 so it judges every image individually without 'memory'
-    gk = GatekeeperInference(MODEL_PATH, buffer_size=1)
+    classifier = RallyClassifier(MODEL_PATH, buffer_size=1)
     
     if not os.path.exists(folder_path):
         print(f"Error: Folder '{folder_path}' not found.")
@@ -42,7 +45,7 @@ def test_on_images(folder_path):
         if frame is None:
             continue
             
-        is_rally, confidence = gk.predict(frame)
+        is_rally, confidence = classifier.predict(frame)
         
         if is_rally:
             rally_count += 1

@@ -10,7 +10,7 @@ import numpy as np
 from collections import deque
 
 """
-GATEKEEPER MODULE: Scene Classifier for Badminton Analysis
+CLASSIFY MODULE: Rally / Non-Rally Scene Classifier for Badminton Analysis
 
 1. DATASET STRUCTURE:
 Organize your training data as follows:
@@ -29,7 +29,7 @@ dataset/
             ...
 """
 
-def get_model(num_classes=2, pretrained=True, freeze_backbone=True):
+def build_model(num_classes=2, pretrained=True, freeze_backbone=True):
     # MobileNetV3 Small is extremely lightweight for live-stream analysis
     model = models.mobilenet_v3_small(weights='DEFAULT' if pretrained else None)
     if freeze_backbone:
@@ -40,7 +40,7 @@ def get_model(num_classes=2, pretrained=True, freeze_backbone=True):
     model.classifier[3] = nn.Linear(num_ftrs, num_classes)
     return model
 
-def train_gatekeeper(data_dir, num_epochs=8, batch_size=32, learning_rate=1e-3,
+def train_classifier(data_dir, num_epochs=8, batch_size=32, learning_rate=1e-3,
                      weight_decay=1e-4, patience=3):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -70,7 +70,7 @@ def train_gatekeeper(data_dir, num_epochs=8, batch_size=32, learning_rate=1e-3,
     class_weights = torch.tensor(class_counts.max() / class_counts, dtype=torch.float).to(device)
     print(f"Class counts: {class_counts.tolist()} | Class weights: {class_weights.tolist()}")
 
-    model = get_model(num_classes=2, freeze_backbone=True).to(device)
+    model = build_model(num_classes=2, freeze_backbone=True).to(device)
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     trainable_params = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.AdamW(trainable_params, lr=learning_rate, weight_decay=weight_decay)
@@ -138,10 +138,10 @@ def train_gatekeeper(data_dir, num_epochs=8, batch_size=32, learning_rate=1e-3,
 
     return model
 
-class GatekeeperInference:
+class RallyClassifier:
     def __init__(self, model_path, device=None, buffer_size=5):
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = get_model(pretrained=False)
+        self.model = build_model(pretrained=False)
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.to(self.device)
         self.model.eval()
@@ -179,7 +179,7 @@ class GatekeeperInference:
         return is_rally_result, confidence
 
 def export_to_onnx(model_path, output_path="gatekeeper.onnx"):
-    model = get_model(pretrained=False)
+    model = build_model(pretrained=False)
     model.load_state_dict(torch.load(model_path, map_location='cpu'))
     model.eval()
     
@@ -191,21 +191,21 @@ def export_to_onnx(model_path, output_path="gatekeeper.onnx"):
     print(f"Model exported to {output_path}")
 
 # Example Integration Loop
-def run_analysis_pipeline(video_source, gatekeeper_model_path):
-    gatekeeper = GatekeeperInference(gatekeeper_model_path)
+def analyze_video(video_source, model_path):
+    classifier = RallyClassifier(model_path)
     cap = cv2.VideoCapture(video_source)
-    
+
     frame_count = 0
     is_rally = False
-    
+
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
-            
-        # Process every 5th frame for the Gatekeeper
+
+        # Process every 5th frame
         if frame_count % 5 == 0:
-            is_rally = gatekeeper.predict(frame)
+            is_rally = classifier.predict(frame)
             
         if is_rally:
             # FLAG ENABLED: Run downstream object detection (YOLO, etc.)
@@ -221,8 +221,8 @@ def run_analysis_pipeline(video_source, gatekeeper_model_path):
 
 if __name__ == "__main__":
     # To train:
-    # train_gatekeeper("path/to/dataset")
-    
+    # train_classifier("path/to/dataset")
+
     # To export:
     # export_to_onnx("gatekeeper_best.pth")
     pass

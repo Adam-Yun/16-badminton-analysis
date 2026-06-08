@@ -1,5 +1,5 @@
 # Live rally detector: continuously captures the screen with mss, runs every
-# Nth frame through the Gatekeeper model, and displays a RALLY / NON-RALLY
+# Nth frame through the rally classifier model, and displays a RALLY / NON-RALLY
 # overlay in a preview window. Supports single-monitor (centered capture) and
 # multi-monitor (preview shown on secondary display) setups. Captured frames
 # are also saved to OUTPUT_DIR for later review.
@@ -7,14 +7,17 @@
 import cv2
 import numpy as np
 from mss import mss
-from gatekeeper import GatekeeperInference
+from dotenv import load_dotenv
+from classify import RallyClassifier
 import time
 import os
 import uuid
 
-MODEL_PATH = "gatekeeper_best.pth"
+load_dotenv()
+
+MODEL_PATH = os.getenv("CLASSIFY_RALLY")
 OUTPUT_DIR = "frames"
-WINDOW_NAME = "Gatekeeper Live View"
+WINDOW_NAME = "Rally Classifier Live View"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
@@ -47,11 +50,11 @@ def draw_overlay(frame, is_rally, confidence):
     return frame
 
 
-def run_single_monitor(gk, sct, primary):
+def run_single_monitor(classifier, sct, primary):
     """MacBook-only mode: centered capture + centered preview window (mirror effect will occur, user accepted)."""
     screen_area = get_centered_screen_area(primary, width=1280, height=720)
 
-    print("--- Live Gatekeeper Active (Single Monitor Mode) ---")
+    print("--- Live Rally Classifier Active (Single Monitor Mode) ---")
     print("Watching live badminton — RALLY / NON-RALLY will appear in the preview window.")
     print("Note: a mirror/inception effect will appear in the preview, but the overlay stays readable.")
     print("Press 'q' in the preview window to stop.\n")
@@ -67,7 +70,7 @@ def run_single_monitor(gk, sct, primary):
         frame = cv2.cvtColor(np.array(sct_img), cv2.COLOR_BGRA2BGR)
 
         if frame_count % 5 == 0:
-            is_rally, confidence = gk.predict(frame)
+            is_rally, confidence = classifier.predict(frame)
             status_text = "RALLY" if is_rally else "NON-RALLY"
             print(f"Frame {frame_count:05d}: {status_text} (Confidence: {confidence*100:.1f}%)")
 
@@ -87,9 +90,9 @@ def run_single_monitor(gk, sct, primary):
     cv2.destroyAllWindows()
 
 
-def run_multi_monitor(gk, sct, screen_area, secondary_monitor):
+def run_multi_monitor(classifier, sct, screen_area, secondary_monitor):
     """Multi-monitor mode: preview window goes on the second monitor, safely outside the capture area."""
-    print("--- Live Gatekeeper Active (Multi-Monitor Mode) ---")
+    print("--- Live Rally Classifier Active (Multi-Monitor Mode) ---")
     print(f"Preview will appear on secondary monitor at ({secondary_monitor['left']}, {secondary_monitor['top']}).")
     print("Press 'q' in the preview window to stop.\n")
 
@@ -105,7 +108,7 @@ def run_multi_monitor(gk, sct, screen_area, secondary_monitor):
         frame = cv2.cvtColor(np.array(sct_img), cv2.COLOR_BGRA2BGR)
 
         if frame_count % 5 == 0:
-            is_rally, confidence = gk.predict(frame)
+            is_rally, confidence = classifier.predict(frame)
             status_text = "RALLY" if is_rally else "NON-RALLY"
             print(f"Frame {frame_count:05d}: {status_text} (Confidence: {confidence*100:.1f}%)")
 
@@ -125,8 +128,8 @@ def run_multi_monitor(gk, sct, screen_area, secondary_monitor):
     cv2.destroyAllWindows()
 
 
-def run_live_gatekeeper():
-    gk = GatekeeperInference(MODEL_PATH, buffer_size=5)
+def run_live_classifier():
+    classifier = RallyClassifier(MODEL_PATH, buffer_size=5)
     sct = mss()
 
     # mss.monitors[0] = union of all monitors, [1] = primary, [2+] = additional displays
@@ -135,11 +138,11 @@ def run_live_gatekeeper():
     if len(sct.monitors) > 2:
         # Multi-monitor: capture is centered on primary, preview goes on secondary
         screen_area = get_centered_screen_area(primary, width=1280, height=720)
-        run_multi_monitor(gk, sct, screen_area, sct.monitors[2])
+        run_multi_monitor(classifier, sct, screen_area, sct.monitors[2])
     else:
         # Single monitor: capture top, preview below
-        run_single_monitor(gk, sct, primary)
+        run_single_monitor(classifier, sct, primary)
 
 
 if __name__ == "__main__":
-    run_live_gatekeeper()
+    run_live_classifier()

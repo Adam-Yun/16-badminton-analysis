@@ -1,17 +1,26 @@
-# Converts the trained PyTorch Gatekeeper model (gatekeeper_best.pth) into an
-# ONNX file (gatekeeper.onnx) for faster inference at runtime.
+# Converts the trained PyTorch rally classifier (CLASSIFY_RALLY) into an
+# ONNX file (TRAIN_ONNX_PATH) for faster inference at runtime.
 
-from gatekeeper import export_to_onnx
 import os
 
+from dotenv import load_dotenv
+
+from classify import export_to_onnx
+
+load_dotenv()
+
 if __name__ == "__main__":
-    model_path = "gatekeeper_best.pth"
-    
+    model_path = os.getenv("CLASSIFY_RALLY")
+    onnx_path = os.getenv("TRAIN_ONNX_PATH", "gatekeeper.onnx")
+
+    if not model_path:
+        raise SystemExit("CLASSIFY_RALLY not set in .env")
+
     if os.path.exists(model_path):
         print(f"Found {model_path}. Converting to fast version (ONNX)...")
         try:
-            export_to_onnx(model_path, "gatekeeper.onnx")
-            print("Done! You now have 'gatekeeper.onnx'.")
+            export_to_onnx(model_path, onnx_path)
+            print(f"Done! You now have '{onnx_path}'.")
         except Exception as e:
             print(f"Export failed: {e}")
     else:

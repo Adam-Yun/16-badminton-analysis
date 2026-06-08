@@ -1,30 +1,33 @@
-# Trains the Gatekeeper rally classifier on the images under DATASET_PATH
-# (expects dataset/train and dataset/val subfolders), saves the best weights as
-# gatekeeper_best.pth, and then exports an ONNX copy for fast inference.
+# Trains the rally classifier on the images under DATASET
+# (expects <DATASET>/train and <DATASET>/val subfolders), saves the best weights
+# to TRAIN_MODEL_PATH, and exports an ONNX copy to TRAIN_ONNX_PATH.
 
-from gatekeeper import train_gatekeeper, export_to_onnx
 import os
+from dotenv import load_dotenv
+from classify import train_classifier, export_to_onnx
 
-# Point this to your dataset folder
-DATASET_PATH = "dataset" 
+load_dotenv()
+
+DATASET_PATH = os.getenv("DATASET")
+MODEL_PATH = os.getenv("TRAIN_MODEL_PATH", "gatekeeper_best.pth")
+ONNX_PATH = os.getenv("TRAIN_ONNX_PATH", "gatekeeper.onnx")
+NUM_EPOCHS = int(os.getenv("TRAIN_EPOCHS", "15"))
 
 if __name__ == "__main__":
+    if not DATASET_PATH:
+        raise SystemExit("DATASET not set in .env")
     if not os.path.exists(DATASET_PATH):
-        print(f"Error: Folder '{DATASET_PATH}' not found. Please make sure your images are in 'dataset/train' and 'dataset/val'.")
+        print(f"Error: Folder '{DATASET_PATH}' not found. Please make sure your images are in '{DATASET_PATH}/train' and '{DATASET_PATH}/val'.")
     else:
-        print("--- Starting Gatekeeper Training ---")
-        
-        # This runs the "Schooling" process
-        # num_epochs=15 means it will look at your data 15 times
+        print("--- Starting Classifier Training ---")
         try:
-            model = train_gatekeeper(DATASET_PATH, num_epochs=15)
-            
-            print("\n--- Training Complete! ---")
-            print("Your model is saved as: gatekeeper_best.pth")
+            model = train_classifier(DATASET_PATH, num_epochs=NUM_EPOCHS)
 
-            # Create the 'Fast' version (ONNX) immediately
-            if os.path.exists("gatekeeper_best.pth"):
+            print("\n--- Training Complete! ---")
+            print(f"Your model is saved as: {MODEL_PATH}")
+
+            if os.path.exists(MODEL_PATH):
                 print("Exporting to ONNX...")
-                export_to_onnx("gatekeeper_best.pth", "gatekeeper.onnx")
+                export_to_onnx(MODEL_PATH, ONNX_PATH)
         except Exception as e:
             print(f"An error occurred during training: {e}")
