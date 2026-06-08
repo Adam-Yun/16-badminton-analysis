@@ -14,4 +14,4 @@ models
 videos
 venv
 sorted_frames
-gatekeeper_best
+gatekeeper_best.pth
