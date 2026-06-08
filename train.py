@@ -1,3 +1,7 @@
+# Trains the Gatekeeper rally classifier on the images under DATASET_PATH
+# (expects dataset/train and dataset/val subfolders), saves the best weights as
+# gatekeeper_best.pth, and then exports an ONNX copy for fast inference.
+
 from gatekeeper import train_gatekeeper, export_to_onnx
 import os
 

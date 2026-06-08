@@ -1,3 +1,7 @@
+# Evaluates the trained Gatekeeper model on a folder of test images, printing
+# the per-image RALLY / NON-RALLY prediction and confidence, plus totals at the
+# end. Uses buffer_size=1 so each image is judged independently.
+
 import cv2
 import os
 import torch

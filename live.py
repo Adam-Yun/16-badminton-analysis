@@ -1,3 +1,9 @@
+# Live rally detector: continuously captures the screen with mss, runs every
+# Nth frame through the Gatekeeper model, and displays a RALLY / NON-RALLY
+# overlay in a preview window. Supports single-monitor (centered capture) and
+# multi-monitor (preview shown on secondary display) setups. Captured frames
+# are also saved to OUTPUT_DIR for later review.
+
 import cv2
 import numpy as np
 from mss import mss

@@ -1,3 +1,8 @@
+# Downloads YouTube videos listed in a URLs file using yt-dlp, saving them as
+# merged mp4s in OUTPUT_DIR. Tries multiple player clients (ios/android/web/tv)
+# and falls back to browser cookies, and skips URLs whose video ID is already
+# present on disk.
+
 import argparse
 import os
 import sys

@@ -1,3 +1,6 @@
+# Converts the trained PyTorch Gatekeeper model (gatekeeper_best.pth) into an
+# ONNX file (gatekeeper.onnx) for faster inference at runtime.
+
 from gatekeeper import export_to_onnx
 import os
 

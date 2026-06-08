@@ -1,3 +1,7 @@
+# Downloads each YouTube URL from a list and extracts frames from the video at
+# a target FPS (default 1 fps) using OpenCV, writing JPEGs named with the video
+# ID into per-video subfolders. The source video is deleted after extraction.
+
 import argparse
 import os
 import sys
