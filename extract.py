@@ -1,100 +1,30 @@
-# Downloads each YouTube URL from a list and extracts frames from the video at
-# a target FPS (default 1 fps) using OpenCV, writing JPEGs named with the video
-# ID into per-video subfolders. The source video is deleted after extraction.
+# Extracts frames from local video files in VIDEOS_DIR at a target FPS using
+# OpenCV, writing JPEGs named with the video ID into per-video subfolders under
+# OUTPUT_DIR. Source videos are preserved.
 
 import argparse
 import os
 import sys
-from typing import Optional
 
 import cv2
-import yt_dlp
 from tqdm import tqdm
 
 
 TARGET_FPS = 1
+VIDEOS_DIR = "videos"
 OUTPUT_DIR = "frames"
-DOWNLOAD_DIR = "downloads"
-URLS_FILE = "urls.txt"
+VIDEO_EXTS = (".mp4", ".mkv", ".webm", ".mov", ".avi")
 
 
-DOWNLOAD_STRATEGIES = [
-    {"name": "ios",      "player_client": ["ios"]},
-    {"name": "android",  "player_client": ["android"]},
-    {"name": "web",      "player_client": ["web"]},
-    {"name": "tv",       "player_client": ["tv"]},
-]
-
-COOKIE_BROWSERS = ["chrome", "safari", "firefox", "brave", "edge"]
-
-
-def _build_ydl_opts(download_dir: str, player_client: list, cookies_browser: Optional[str]) -> dict:
-    opts = {
-        "format": "bv*+ba/b",
-        "merge_output_format": "mp4",
-        "outtmpl": os.path.join(download_dir, "%(id)s.%(ext)s"),
-        "quiet": False,
-        "no_warnings": True,
-        "retries": 5,
-        "fragment_retries": 5,
-        "extractor_retries": 3,
-        "extractor_args": {"youtube": {"player_client": player_client}},
-        "http_headers": {
-            "User-Agent": (
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0.0.0 Safari/537.36"
-            ),
-        },
-    }
-    if cookies_browser:
-        opts["cookiesfrombrowser"] = (cookies_browser,)
-    return opts
-
-
-def download_video(url: str, download_dir: str) -> str:
-    os.makedirs(download_dir, exist_ok=True)
-
-    attempts = []
-    for strat in DOWNLOAD_STRATEGIES:
-        attempts.append((f"player_client={strat['name']}", strat["player_client"], None))
-    for browser in COOKIE_BROWSERS:
-        attempts.append((f"cookies={browser}+ios", ["ios"], browser))
-
-    last_error = None
-    for label, player_client, cookies_browser in attempts:
-        print(f"\n--- Trying download strategy: {label} ---")
-        try:
-            opts = _build_ydl_opts(download_dir, player_client, cookies_browser)
-            with yt_dlp.YoutubeDL(opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                video_path = ydl.prepare_filename(info)
-
-            base, _ = os.path.splitext(video_path)
-            mp4_path = base + ".mp4"
-            if os.path.exists(mp4_path):
-                return mp4_path
-            if os.path.exists(video_path):
-                return video_path
-            raise RuntimeError("Download finished but no output file was found.")
-        except Exception as e:
-            last_error = e
-            print(f"Strategy '{label}' failed: {e}")
-
-    raise RuntimeError(f"All download strategies failed. Last error: {last_error}")
-
-
-def read_urls(urls_file: str) -> list:
-    with open(urls_file, "r") as f:
-        lines = f.readlines()
-
-    urls = []
-    for line in lines:
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        urls.append(line)
-    return urls
+def find_videos(videos_dir: str) -> list:
+    if not os.path.isdir(videos_dir):
+        return []
+    files = []
+    for name in sorted(os.listdir(videos_dir)):
+        path = os.path.join(videos_dir, name)
+        if os.path.isfile(path) and name.lower().endswith(VIDEO_EXTS):
+            files.append(path)
+    return files
 
 
 def extract_frames(video_path: str, video_output_dir: str, video_id: str, target_fps: float) -> int:
@@ -130,7 +60,6 @@ def extract_frames(video_path: str, video_output_dir: str, video_id: str, target
 
             if frame_index % skip_interval == 0:
                 saved_count += 1
-                # Include video_id in the filename for global uniqueness
                 filename = os.path.join(video_output_dir, f"frame_{video_id}_{saved_count:04d}.jpg")
                 cv2.imwrite(filename, frame)
 
@@ -143,11 +72,11 @@ def extract_frames(video_path: str, video_output_dir: str, video_id: str, target
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Download YouTube videos listed in a text file and extract frames at a target FPS."
+        description="Extract frames from local videos at a target FPS."
     )
     parser.add_argument(
-        "urls_file", nargs="?", default=URLS_FILE,
-        help=f"Path to a .txt file containing one YouTube URL per line (default: {URLS_FILE})",
+        "--videos-dir", default=VIDEOS_DIR,
+        help=f"Folder containing local video files (default: {VIDEOS_DIR})",
     )
     parser.add_argument(
         "--fps", type=float, default=TARGET_FPS,
@@ -157,32 +86,23 @@ def main() -> None:
         "--output", default=OUTPUT_DIR,
         help=f"Output directory for extracted frames (default: {OUTPUT_DIR})",
     )
-    parser.add_argument(
-        "--download-dir", default=DOWNLOAD_DIR,
-        help=f"Directory to temporarily store the downloaded video (default: {DOWNLOAD_DIR})",
-    )
     args = parser.parse_args()
 
-    if not os.path.exists(args.urls_file):
-        print(f"URL file not found: {args.urls_file}")
+    if not os.path.isdir(args.videos_dir):
+        print(f"Videos folder not found: {args.videos_dir}")
         sys.exit(1)
 
-    urls = read_urls(args.urls_file)
-    if not urls:
-        print(f"No URLs found in {args.urls_file}.")
+    videos = find_videos(args.videos_dir)
+    if not videos:
+        print(f"No video files found in {args.videos_dir}.")
         sys.exit(1)
 
-    print(f"Found {len(urls)} URL(s) in {args.urls_file}.")
+    print(f"Found {len(videos)} video(s) in {args.videos_dir}.")
 
     total_saved = 0
-    for i, url in enumerate(urls, start=1):
-        print(f"\n=== [{i}/{len(urls)}] {url} ===")
-        video_path = None
+    for i, video_path in enumerate(videos, start=1):
+        print(f"\n=== [{i}/{len(videos)}] {video_path} ===")
         try:
-            print("Downloading video...")
-            video_path = download_video(url, args.download_dir)
-            print(f"Downloaded: {video_path}")
-
             video_id = os.path.splitext(os.path.basename(video_path))[0]
             video_output_dir = os.path.join(args.output, video_id)
 
@@ -190,11 +110,7 @@ def main() -> None:
             total_saved += saved
             print(f"Saved {saved} frames to '{video_output_dir}'.")
         except Exception as e:
-            print(f"Failed to process {url}: {e}")
-        finally:
-            if video_path and os.path.exists(video_path):
-                os.remove(video_path)
-                print(f"Deleted source video: {video_path}")
+            print(f"Failed to process {video_path}: {e}")
 
     print(f"\nDone. Total frames saved across all videos: {total_saved}.")
 
@@ -204,8 +120,3 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         sys.exit(1)
-
-
-'''
-https://www.youtube.com/watch?v=Wsv9c9iwxFY
-'''
