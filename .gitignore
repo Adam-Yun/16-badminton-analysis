@@ -10,3 +10,4 @@ old_raw_frames
 local
 .DS_Store
 models
+.claude
