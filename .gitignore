@@ -15,3 +15,4 @@ videos
 venv
 sorted_frames
 gatekeeper_best.pth
+data
