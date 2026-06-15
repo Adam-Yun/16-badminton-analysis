@@ -41,7 +41,7 @@ def build_model(num_classes=2, pretrained=True, freeze_backbone=True):
     return model
 
 def train_classifier(data_dir, num_epochs=8, batch_size=32, learning_rate=1e-3,
-                     weight_decay=1e-4, patience=3):
+                     weight_decay=1e-4, patience=3, save_path="gatekeeper_best.pth"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     data_transforms = {
@@ -127,7 +127,8 @@ def train_classifier(data_dir, num_epochs=8, batch_size=32, learning_rate=1e-3,
                 if epoch_loss < best_loss:
                     best_loss = epoch_loss
                     epochs_since_improvement = 0
-                    torch.save(model.state_dict(), "gatekeeper_best.pth")
+                    os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+                    torch.save(model.state_dict(), save_path)
                     print(f"  *** New best val loss: {best_loss:.4f} (saved) ***")
                 else:
                     epochs_since_improvement += 1

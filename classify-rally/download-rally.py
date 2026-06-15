@@ -16,18 +16,18 @@ OUTPUT_DIR = "badminton_analysis_videos"
 URLS_FILE = os.getenv("DOWNLOAD_VIDEO_URLS")
 
 DOWNLOAD_STRATEGIES = [
-    {"name": "ios",     "player_client": ["ios"]},
-    {"name": "android", "player_client": ["android"]},
     {"name": "web",     "player_client": ["web"]},
     {"name": "tv",      "player_client": ["tv"]},
+    {"name": "ios",     "player_client": ["ios"]},
+    {"name": "android", "player_client": ["android"]},
 ]
 
-COOKIE_BROWSERS = ["chrome", "safari", "firefox", "brave", "edge"]
+COOKIE_BROWSERS = ["chrome", "safari"]
 
 
 def _build_ydl_opts(output_dir: str, player_client: list, cookies_browser: Optional[str]) -> dict:
     opts = {
-        "format": "bv*+ba/b",
+        "format": "best",
         "merge_output_format": "mp4",
         "outtmpl": os.path.join(output_dir, "%(id)s.%(ext)s"),
         "quiet": False,
@@ -56,6 +56,7 @@ def download_video(url: str, output_dir: str) -> str:
     for strat in DOWNLOAD_STRATEGIES:
         attempts.append((f"player_client={strat['name']}", strat["player_client"], None))
     for browser in COOKIE_BROWSERS:
+        attempts.append((f"cookies={browser}+web", ["web"], browser))
         attempts.append((f"cookies={browser}+ios", ["ios"], browser))
 
     last_error = None

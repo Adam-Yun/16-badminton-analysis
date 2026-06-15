@@ -5,7 +5,7 @@ import os
 
 from dotenv import load_dotenv
 
-from classify import export_to_onnx
+from classify_rally.classify_rally import export_to_onnx
 
 load_dotenv()
 

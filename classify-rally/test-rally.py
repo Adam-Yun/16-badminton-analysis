@@ -6,7 +6,7 @@ import cv2
 import os
 import torch
 from dotenv import load_dotenv
-from classify import RallyClassifier
+from classify_rally.classify_rally import RallyClassifier
 
 load_dotenv()
 

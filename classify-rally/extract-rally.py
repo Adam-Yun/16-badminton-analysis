@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 
 TARGET_FPS = 1
-VIDEOS_DIR = "videos"
+VIDEOS_DIR = "/Users/adam/Desktop/Personal/Personal (Adam)/Github/16-badminton-analysis/videos"
 OUTPUT_DIR = "frames"
 VIDEO_EXTS = (".mp4", ".mkv", ".webm", ".mov", ".avi")
 

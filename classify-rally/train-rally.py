@@ -5,7 +5,7 @@
 import os
 import torch
 from dotenv import load_dotenv
-from classify import train_classifier, export_to_onnx
+from classify_rally.classify_rally import train_classifier, export_to_onnx
 
 load_dotenv()
 
@@ -26,7 +26,7 @@ if __name__ == "__main__":
             print("CUDA not available — training on CPU (this will be slow)")
         print("--- Starting Classifier Training ---")
         try:
-            model = train_classifier(DATASET_PATH, num_epochs=NUM_EPOCHS)
+            model = train_classifier(DATASET_PATH, num_epochs=NUM_EPOCHS, save_path=MODEL_PATH)
 
             print("\n--- Training Complete! ---")
             print(f"Your model is saved as: {MODEL_PATH}")

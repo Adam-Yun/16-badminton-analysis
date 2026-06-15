@@ -1,0 +1,13 @@
+torch
+torchvision
+opencv-python
+albumentations
+filterpy
+numpy
+matplotlib
+tqdm
+PyYAML
+ultralytics
+pandas
+scipy
+python-dotenv

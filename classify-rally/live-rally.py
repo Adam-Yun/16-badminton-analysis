@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 from mss import mss
 from dotenv import load_dotenv
-from classify import RallyClassifier
+from classify_rally.classify_rally import RallyClassifier
 import time
 import os
 import uuid
